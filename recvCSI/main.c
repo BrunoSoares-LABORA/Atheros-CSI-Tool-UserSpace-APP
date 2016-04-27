@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     quit = 0;
     total_msg_cnt = 0;
     
-    while(1){
+    while(1) {
         if (1 == quit){
             return 0;
             fclose(fp);
@@ -108,23 +108,28 @@ int main(int argc, char* argv[])
              * fill the payload buffer with the payload
              * fill the CSI matrix with the extracted CSI value
              */
-            record_csi_payload(buf_addr, csi_status, data_buf, csi_matrix); 
-            
-            /* Till now, we store the packet status in the struct csi_status 
-             * store the packet payload in the data buffer
-             * store the csi matrix in the csi buffer
-             * with all those data, we can build our own processing function! 
-             */
-            //porcess_csi(data_buf, csi_status, csi_matrix);   
+            record_csi_payload(buf_addr, csi_status, data_buf, csi_matrix);
+
+            int i, j, k;
+            for(i = 0; i < 3; i++) {
+                for(j = 0; j < 3; j++) {
+                    for(k = 0; k < 114; k++) {
+                        printf("%d,%d\t", csi_matrix[i][j][k]->real, csi_matrix[i][j][k]->imag);
+                    }
+                    printf("\n");
+                }
+                printf("\n");
+            }
             
             printf("Recv %dth msg with rate: 0x%02x | payload len: %d\n",total_msg_cnt,csi_status->rate,csi_status->payload_len);
+
             
             /* log the received data for off-line processing */
-            if (log_flag){
-                buf_len = csi_status->buf_len;
-                fwrite(&buf_len,1,2,fp);
-                fwrite(buf_addr,1,buf_len,fp);
-            }
+//            if (log_flag){
+//                buf_len = csi_status->buf_len;
+//                fwrite(&buf_len,1,2,fp);
+//                fwrite(buf_addr,1,buf_len,fp);
+//            }
         }
     }
     fclose(fp);

@@ -110,18 +110,33 @@ int main(int argc, char* argv[])
              */
             record_csi_payload(buf_addr, csi_status, data_buf, csi_matrix);
 
-            int i, j, k;
-            for(i = 0; i < 3; i++) {
-                for(j = 0; j < 3; j++) {
-                    for(k = 0; k < 114; k++) {
-                        printf("%d,%d\t", csi_matrix[i][j][k]->real, csi_matrix[i][j][k]->imag);
-                    }
-                    printf("\n");
-                }
-                printf("\n");
-            }
-            
-            printf("Recv %dth msg with rate: 0x%02x | payload len: %d\n",total_msg_cnt,csi_status->rate,csi_status->payload_len);
+//            int i, j, k;
+//            for(i = 0; i < 3; i++) {
+//                for(j = 0; j < 3; j++) {
+//                    for(k = 0; k < 114; k++) {
+//                        printf("%d,%d\t", csi_matrix[i][j][k].real, csi_matrix[i][j][k].imag);
+//                    }
+//                    printf("\n");
+//                }
+//                printf("\n");
+//            }
+
+            printf("CSI DATA:\n");
+            printf("Channel: %d\n", csi_status->channel);
+            printf("ChanBW: %d\n", csi_status->chanBW);
+            printf("Rate: %d\n", csi_status->rate);
+            printf("NR: %d\n", csi_status->nr);
+            printf("NC: %d\n", csi_status->nc);
+            printf("Num tones: %d\n", csi_status->num_tones);
+            printf("Noise: %d\n", csi_status->noise);
+            printf("Phyerr: %d\n", csi_status->phyerr);
+            printf("RSSI: %d\n", csi_status->rssi);
+            printf("RSSI0: %d\n", csi_status->rssi_0);
+            printf("RSSI1: %d\n", csi_status->rssi_1);
+            printf("RSSI2: %d\n", csi_status->rssi_2);
+            printf("Payload len: %d\n", csi_status->payload_len);
+            printf("CSI len: %d\n", csi_status->csi_len);
+            printf("Buf len: %d\n", csi_status->buf_len);
 
             
             /* log the received data for off-line processing */

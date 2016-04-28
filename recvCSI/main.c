@@ -26,7 +26,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <libpq-fe.h>
+
 #include "csi_fun.h"
+#include "csi_persistence.h"
 
 #define BUFSIZE 4096
 
@@ -45,6 +48,9 @@ void sig_handler(int signo)
 
 int main(int argc, char* argv[])
 {
+    PGconn *conn  = NULL;
+    pg_connect(&conn);
+
     FILE*       fp;
     int         fd;
     int         i;
@@ -121,23 +127,7 @@ int main(int argc, char* argv[])
 //                printf("\n");
 //            }
 
-            printf("CSI DATA:\n");
-            printf("Channel: %d\n", csi_status->channel);
-            printf("ChanBW: %d\n", csi_status->chanBW);
-            printf("Rate: %d\n", csi_status->rate);
-            printf("NR: %d\n", csi_status->nr);
-            printf("NC: %d\n", csi_status->nc);
-            printf("Num tones: %d\n", csi_status->num_tones);
-            printf("Noise: %d\n", csi_status->noise);
-            printf("Phyerr: %d\n", csi_status->phyerr);
-            printf("RSSI: %d\n", csi_status->rssi);
-            printf("RSSI0: %d\n", csi_status->rssi_0);
-            printf("RSSI1: %d\n", csi_status->rssi_1);
-            printf("RSSI2: %d\n", csi_status->rssi_2);
-            printf("Payload len: %d\n", csi_status->payload_len);
-            printf("CSI len: %d\n", csi_status->csi_len);
-            printf("Buf len: %d\n", csi_status->buf_len);
-
+            save_csi_status(&conn, csi_status);
             
             /* log the received data for off-line processing */
 //            if (log_flag){

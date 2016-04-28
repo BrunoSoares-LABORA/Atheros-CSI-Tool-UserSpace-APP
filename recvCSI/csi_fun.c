@@ -121,7 +121,6 @@ void close_csi_device(int fd){
     //remove("/dev/CSI_dev");
 }
 
-
 int read_csi_buf(unsigned char* buf_addr,int fd, int BUFSIZE){
     int cnt;
     /* listen to the port
@@ -134,6 +133,7 @@ int read_csi_buf(unsigned char* buf_addr,int fd, int BUFSIZE){
     else
         return 0;
 }
+
 void record_status(unsigned char* buf_addr, int cnt, csi_struct* csi_status){
     if (is_big_endian()){
         csi_status->tstamp  =   
@@ -196,9 +196,4 @@ void record_csi_payload(unsigned char* buf_addr, csi_struct* csi_status, unsigne
     /* extract the CSI and fill the complex matrix */
     csi_addr = buf_addr + csi_st_len;
     fill_csi_matrix(csi_addr,nr,nc,num_tones, csi_matrix);
-}
-void  porcess_csi(unsigned char* data_buf, csi_struct* csi_status,COMPLEX(* csi_buf)[3][114]){
-    /* here is the function for csi processing
-     * you can install your own function */
-    return;
 }

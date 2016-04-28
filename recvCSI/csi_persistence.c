@@ -8,8 +8,8 @@
 #include "csi_fun.h"
 #include "csi_persistence.h"
 
-void pg_close(PGconn** conn) {
-    PQfinish(*conn);
+void pg_close(PGconn *conn) {
+    PQfinish(conn);
 }
 
 int pg_connect(PGconn** conn) {
@@ -23,7 +23,7 @@ int pg_connect(PGconn** conn) {
     *conn = PQconnectdb(connection_string);
     if (PQstatus(*conn) == CONNECTION_BAD) {
         printf("ERROR: Could not connect to database: %s", PQerrorMessage(*conn));
-        pg_close(conn);
+        pg_close(*conn);
         return 0;
     }
 
@@ -56,7 +56,7 @@ int csi_init_table(PGconn** conn) {
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         printf("ERROR: Could not create initial CSI database table: %s", PQerrorMessage(*conn));
         PQclear(res);
-        pg_close(conn);
+        pg_close(*conn);
         return 0;
     }
 
@@ -70,8 +70,8 @@ int save_csi_status(PGconn** conn, csi_struct* csi_status) {
     char* insert_query = NULL;
     size_t len;
 
-    len = (size_t)snprintf(NULL, 0, "INSERT INTO csi_status VALUES(" \
-            "DEFAULT,'%\" PRId64\"','%d','%f','%d','%d','%d','%d','%d','%d','%d'," \
+    len = 1 + (size_t)snprintf(NULL, 0, "INSERT INTO csi_status VALUES(" \
+            "DEFAULT,'%" PRIu64"','%d','%f','%d','%d','%d','%d','%d','%d','%d'," \
             "'%d','%d','%d','%d','%d','%d'" \
           ")",
            csi_status->tstamp,
@@ -94,12 +94,12 @@ int save_csi_status(PGconn** conn, csi_struct* csi_status) {
 
     insert_query = malloc(len);
     snprintf(insert_query, len, "INSERT INTO csi_status VALUES(" \
-            "DEFAULT,'%" PRId64"','%d','%f','%d','%d','%d','%d','%d','%d','%d'," \
+            "DEFAULT,'%" PRIu64"','%d','%f','%d','%d','%d','%d','%d','%d','%d'," \
             "'%d','%d','%d','%d','%d','%d'" \
           ")",
              csi_status->tstamp,
              csi_status->channel,
-             (csi_status->chanBW ? 20.0 : 40.0),
+             (!csi_status->chanBW ? 20.0 : 40.0),
              csi_status->rate,
              csi_status->nr,
              csi_status->nc,
@@ -121,7 +121,7 @@ int save_csi_status(PGconn** conn, csi_struct* csi_status) {
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         printf("ERROR: Could not create initial CSI database table: %s", PQerrorMessage(*conn));
         PQclear(res);
-        pg_close(conn);
+        pg_close(*conn);
         return 0;
     }
 

@@ -5,6 +5,6 @@
 #define PG_PORT     5432
 
 int pg_connect(PGconn** conn);
-void pg_close(PGconn *conn);
+void pg_close(PGconn** conn);
 int csi_init_table(PGconn** conn);
 int save_csi_status(PGconn** conn, csi_struct* csi_status);

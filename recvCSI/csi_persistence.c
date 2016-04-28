@@ -8,8 +8,12 @@
 #include "csi_fun.h"
 #include "csi_persistence.h"
 
-void pg_close(PGconn *conn) {
-    PQfinish(conn);
+void pg_close(PGconn** conn) {
+    if(*conn != NULL) {
+        PQfinish(*conn);
+        *conn = NULL;
+    }
+    printf("CONN == NULL: %d", (*conn == NULL));
 }
 
 int pg_connect(PGconn** conn) {
@@ -23,7 +27,7 @@ int pg_connect(PGconn** conn) {
     *conn = PQconnectdb(connection_string);
     if (PQstatus(*conn) == CONNECTION_BAD) {
         printf("ERROR: Could not connect to database: %s", PQerrorMessage(*conn));
-        pg_close(*conn);
+        pg_close(conn);
         return 0;
     }
 
@@ -56,7 +60,7 @@ int csi_init_table(PGconn** conn) {
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         printf("ERROR: Could not create initial CSI database table: %s", PQerrorMessage(*conn));
         PQclear(res);
-        pg_close(*conn);
+        pg_close(conn);
         return 0;
     }
 
@@ -115,13 +119,11 @@ int save_csi_status(PGconn** conn, csi_struct* csi_status) {
              csi_status->buf_len
     );
 
-    printf("Insert query: %s", insert_query);
     res = PQexec(*conn, insert_query);
-
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        printf("ERROR: Could not create initial CSI database table: %s", PQerrorMessage(*conn));
+        printf("ERROR: Could not insert CSI status: %s", PQerrorMessage(*conn));
         PQclear(res);
-        pg_close(*conn);
+        pg_close(conn);
         return 0;
     }
 

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <libpq-fe.h>
+#include <inttypes.h>
 
 #include "csi_fun.h"
 #include "csi_persistence.h"
@@ -70,7 +71,7 @@ int save_csi_status(PGconn** conn, csi_struct* csi_status) {
     size_t len;
 
     len = (size_t)snprintf(NULL, 0, "INSERT INTO csi_status VALUES(" \
-            "DEFAULT,'%d','%d','%f','%d','%d','%d','%d','%d','%d','%d'," \
+            "DEFAULT,'%\" PRId64\"','%d','%f','%d','%d','%d','%d','%d','%d','%d'," \
             "'%d','%d','%d','%d','%d','%d'" \
           ")",
            csi_status->tstamp,
@@ -93,7 +94,7 @@ int save_csi_status(PGconn** conn, csi_struct* csi_status) {
 
     insert_query = malloc(len);
     snprintf(insert_query, len, "INSERT INTO csi_status VALUES(" \
-            "DEFAULT,'%d','%d','%f','%d','%d','%d','%d','%d','%d','%d'," \
+            "DEFAULT,'%" PRId64"','%d','%f','%d','%d','%d','%d','%d','%d','%d'," \
             "'%d','%d','%d','%d','%d','%d'" \
           ")",
              csi_status->tstamp,

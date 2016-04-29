@@ -139,16 +139,13 @@ int create_csi_status_insert_query(char *insert_query, size_t max_len, csi_struc
 }
 
 int save_csi_matrix(PGconn** conn, int csi_status_id, csi_struct* csi_status, COMPLEX(* csi_matrix)[CSI_NC][CSI_MAX_SUBCARRIERS]) {
-    int subcarrier, antenna, nc;
-
     int fixed_insert_len = 90 + ((int) (floor(log10(abs(csi_status_id))) + 1)) +
             ((int) (floor(log10(abs(csi_status->tstamp))) + 1));
     int subcarrier_len = 0;
     int antenna_len = 0;
     char* insert_query = NULL;
 
-    "INSERT INTO csi_data VALUES(DEFAULT,'%" PRIu64"','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d')"
-
+    int subcarrier, antenna, nc;
     for(subcarrier = 0; subcarrier < csi_status->num_tones; subcarrier++) {
         subcarrier_len = (int) (floor(log10(abs(subcarrier))) + 1);
         for(antenna = 0; antenna < csi_status->nr; antenna++) {
@@ -175,12 +172,15 @@ int save_csi_matrix(PGconn** conn, int csi_status_id, csi_struct* csi_status, CO
                         csi_matrix[antenna][nc][subcarrier].imag, 0);
                 strcat(insert_query, aux);
             }
+            strcat(insert_query, ")");
 
-            printf(insert_query);
+            printf("%s\n", insert_query);
 
             free(insert_query);
         }
     }
+
+    printf("FINISHED");
 
     return 1;
 }

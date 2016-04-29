@@ -2,7 +2,7 @@ OBJS = csi_fun.o csi_persistence.o main.o
 CC = gcc
 
 recv_csi: $(OBJS)
-	$(CC) $(OBJS) -o recv_csi -L/usr/local/pgsql/lib -lpq
+	$(CC) $(OBJS) -o recv_csi -L/usr/local/pgsql/lib -lpq -lm
 csi_fun.o: csi_fun.c csi_fun.h
 	$(CC) -c csi_fun.c -o csi_fun.o
 csi_persistence.o: csi_persistence.c csi_persistence.h

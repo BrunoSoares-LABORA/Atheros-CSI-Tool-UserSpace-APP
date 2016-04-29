@@ -13,7 +13,11 @@
  * =====================================================================================
  */
 #include <stdbool.h>
-#define Kernel_CSI_ST_LEN 23 
+#define Kernel_CSI_ST_LEN 23
+#define CSI_NR 3
+#define CSI_NC 3
+#define CSI_MAX_SUBCARRIERS 114
+
 typedef struct
 {
     int real;
@@ -49,4 +53,4 @@ int   open_csi_device();
 void  close_csi_device(int fd);
 int   read_csi_buf(unsigned char* buf_addr,int fd, int BUFSIZE);
 void  record_status(unsigned char* buf_addr, int cnt, csi_struct* csi_status);
-void  record_csi_payload(unsigned char* buf_addr, csi_struct* csi_status,unsigned char* data_buf, COMPLEX(* csi_buf)[3][114]);
+void  record_csi_payload(unsigned char* buf_addr, csi_struct* csi_status,unsigned char* data_buf, COMPLEX(* csi_matrix)[CSI_NC][CSI_MAX_SUBCARRIERS]);

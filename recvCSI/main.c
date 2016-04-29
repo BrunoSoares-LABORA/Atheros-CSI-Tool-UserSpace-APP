@@ -37,7 +37,7 @@ int quit;
 unsigned char buf_addr[BUFSIZE];
 unsigned char data_buf[1500];
 
-COMPLEX csi_matrix[3][3][114];
+COMPLEX csi_matrix[CSI_NR][CSI_NC][CSI_MAX_SUBCARRIERS];
 csi_struct*   csi_status;
 
 void sig_handler(int signo)
@@ -117,9 +117,9 @@ int main(int argc, char* argv[])
             record_csi_payload(buf_addr, csi_status, data_buf, csi_matrix);
 
 //            int i, j, k;
-//            for(i = 0; i < 3; i++) {
-//                for(j = 0; j < 3; j++) {
-//                    for(k = 0; k < 114; k++) {
+//            for(i = 0; i < csi_status->nr; i++) {
+//                for(j = 0; j < csi_status->nc; j++) {
+//                    for(k = 0; k < csi_status->num_tones; k++) {
 //                        printf("%d,%d\t", csi_matrix[i][j][k].real, csi_matrix[i][j][k].imag);
 //                    }
 //                    printf("\n");
@@ -127,7 +127,8 @@ int main(int argc, char* argv[])
 //                printf("\n");
 //            }
 
-            save_csi_status(&conn, csi_status);
+//            save_csi_status(&conn, csi_status);
+            save_csi_matrix(&conn, 1, csi_status, csi_matrix);
             
             /* log the received data for off-line processing */
 //            if (log_flag){

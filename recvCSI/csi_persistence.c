@@ -58,27 +58,36 @@ int csi_init_table(PGconn** conn) {
     }
 
     char* init_tables_query = NULL;
-    init_tables_query = malloc(2500*(sizeof(char)));
+    init_tables_query = malloc(1200*(sizeof(char)));
     sprintf(init_tables_query,
-                 "CREATE SEQUENCE IF NOT EXISTS csi_status_id_seq " \
+                 "CREATE SEQUENCE csi_status_id_seq " \
                          "START WITH 1 " \
                          "INCREMENT BY 1 " \
                          "NO MINVALUE " \
                          "NO MAXVALUE " \
                          "CACHE 1; " \
                  "ALTER TABLE public.csi_status_id_seq OWNER TO %s; " \
-                 "CREATE SEQUENCE IF NOT EXISTS csi_data_id_seq " \
+                 "CREATE SEQUENCE csi_data_id_seq " \
                          "START WITH 1 " \
                          "INCREMENT BY 1 " \
                          "NO MINVALUE " \
                          "NO MAXVALUE " \
                          "CACHE 1; " \
-                 "ALTER TABLE public.csi_data_id_seq OWNER TO %s; " \
+                 "ALTER TABLE public.csi_data_id_seq OWNER TO %s;",
+            PG_USER,
+            PG_USER
+    );
+
+    PGresult *res;
+    res = PQexec(*conn, init_tables_query);
+    PQclear(res);
+
+    sprintf(init_tables_query,
                  "CREATE TABLE IF NOT EXISTS csi_status(" \
                          "id INTEGER PRIMARY KEY DEFAULT nextval('csi_status_id_seq'::regclass)," \
-                         "timestamp_nano INTEGER," \
+                         "timestamp_nano BIGINT," \
                          "channel INTEGER," \
-                         "channel_bw DOUBLE," \
+                         "channel_bw REAL," \
                          "rate INTEGER," \
                          "num_receives INTEGER," \
                          "num_transmitters INTEGER," \
@@ -95,7 +104,7 @@ int csi_init_table(PGconn** conn) {
                  ");" \
                  "CREATE TABLE IF NOT EXISTS csi_data(" \
                           "id INTEGER PRIMARY KEY DEFAULT nextval('csi_data_id_seq'::regclass)," \
-                          "timestamp_nano INTEGER," \
+                          "timestamp_nano BIGINT," \
                           "status_id INTEGER," \
                           "antenna INTEGER," \
                           "subcarrier INTEGER," \
@@ -108,14 +117,10 @@ int csi_init_table(PGconn** conn) {
                           "rc_3_real INTEGER," \
                           "rc_3_imag INTEGER," \
                           "rc_3_rssi INTEGER" \
-                 ");",
-            PG_USER,
-            PG_USER
+                 ");"
     );
 
-    PGresult *res;
     res = PQexec(*conn, init_tables_query);
-
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         printf("ERROR: Could not create initial CSI database table: %s", PQerrorMessage(*conn));
         PQclear(res);

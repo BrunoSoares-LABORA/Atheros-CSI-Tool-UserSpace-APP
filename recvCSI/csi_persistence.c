@@ -8,20 +8,22 @@
 #include "csi_persistence.h"
 
 int num_digits(int number) {
-    int digits = 0;
-    while (number != 0) {
-        number /= 10;
-        digits++;
-    }
-    return digits;
+    return long_num_digits(number);
 }
 
 int long_num_digits(long number) {
     int digits = 0;
-    while (number != 0) {
+    if(number < 0) {
+        number = number * -1;
+        digits++;
+    }
+
+    if(number == 0) return 1;
+    while (number > 0) {
         number /= 10;
         digits++;
     }
+
     return digits;
 }
 
@@ -33,7 +35,7 @@ void pg_close(PGconn** conn) {
 }
 
 int pg_connect(PGconn** conn) {
-    int port_len = (int) num_digits(PG_PORT);
+    int port_len = num_digits(PG_PORT);
     int str_len = (int) (40 + port_len + strlen(PG_USER) + strlen(PG_PASS) + strlen(PG_DBNAME) + strlen(PG_HOST));
     char connection_string[str_len];
 
@@ -55,10 +57,25 @@ int csi_init_table(PGconn** conn) {
         return 0;
     }
 
-    PGresult *res;
-    res = PQexec(*conn,
-                  "CREATE TABLE IF NOT EXISTS csi_status(" \
-                         "id INTEGER PRIMARY KEY," \
+    char* init_tables_query = NULL;
+    init_tables_query = malloc(2500*(sizeof(char)));
+    sprintf(init_tables_query,
+                 "CREATE SEQUENCE IF NOT EXISTS csi_status_id_seq " \
+                         "START WITH 1 " \
+                         "INCREMENT BY 1 " \
+                         "NO MINVALUE " \
+                         "NO MAXVALUE " \
+                         "CACHE 1; " \
+                 "ALTER TABLE public.csi_status_id_seq OWNER TO %s; " \
+                 "CREATE SEQUENCE IF NOT EXISTS csi_data_id_seq " \
+                         "START WITH 1 " \
+                         "INCREMENT BY 1 " \
+                         "NO MINVALUE " \
+                         "NO MAXVALUE " \
+                         "CACHE 1; " \
+                 "ALTER TABLE public.csi_data_id_seq OWNER TO %s; " \
+                 "CREATE TABLE IF NOT EXISTS csi_status(" \
+                         "id INTEGER PRIMARY KEY DEFAULT nextval('csi_status_id_seq'::regclass)," \
                          "timestamp_nano INTEGER," \
                          "channel INTEGER," \
                          "channel_bw DOUBLE," \
@@ -77,21 +94,27 @@ int csi_init_table(PGconn** conn) {
                          "buf_len INTEGER" \
                  ");" \
                  "CREATE TABLE IF NOT EXISTS csi_data(" \
-                          "id INTEGER PRIMARY KEY" \
-                          "timestamp_nano INTEGER" \
-                          "status_id INTEGER" \
-                          "antenna INTEGER" \
-                          "subcarrier INTEGER" \
-                          "rc_1_real INTEGER" \
-                          "rc_1_imag INTEGER" \
-                          "rc_1_rssi INTEGER" \
-                          "rc_2_real INTEGER" \
-                          "rc_2_imag INTEGER" \
-                          "rc_2_rssi INTEGER" \
-                          "rc_3_real INTEGER" \
-                          "rc_3_imag INTEGER" \
+                          "id INTEGER PRIMARY KEY DEFAULT nextval('csi_data_id_seq'::regclass)," \
+                          "timestamp_nano INTEGER," \
+                          "status_id INTEGER," \
+                          "antenna INTEGER," \
+                          "subcarrier INTEGER," \
+                          "rc_1_real INTEGER," \
+                          "rc_1_imag INTEGER," \
+                          "rc_1_rssi INTEGER," \
+                          "rc_2_real INTEGER," \
+                          "rc_2_imag INTEGER," \
+                          "rc_2_rssi INTEGER," \
+                          "rc_3_real INTEGER," \
+                          "rc_3_imag INTEGER," \
                           "rc_3_rssi INTEGER" \
-                 ");");
+                 ");",
+            PG_USER,
+            PG_USER
+    );
+
+    PGresult *res;
+    res = PQexec(*conn, init_tables_query);
 
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         printf("ERROR: Could not create initial CSI database table: %s", PQerrorMessage(*conn));
@@ -100,6 +123,7 @@ int csi_init_table(PGconn** conn) {
         return 0;
     }
 
+    free(init_tables_query);
     PQclear(res);
     return 1;
 }
@@ -128,7 +152,21 @@ int save_csi_status(PGconn** conn, csi_struct* csi_status) {
 
     free(insert_query);
     PQclear(res);
-    return 1;
+
+    res = PQexec(*conn, "SELECT id FROM csi_status ORDER BY id DESC LIMIT 1");
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        printf("ERROR: Could not retrieve latest CSI status registered: %s", PQerrorMessage(*conn));
+        PQclear(res);
+        pg_close(conn);
+        return 0;
+    }
+
+    int csi_status_id = atoi(PQgetvalue(res, 0, 0));
+    PQclear(res);
+
+    printf("INSERT ID: %d\n", csi_status_id);
+
+    return csi_status_id;
 }
 
 int create_csi_status_insert_query(char *insert_query, size_t max_len, csi_struct* csi_status) {
@@ -156,47 +194,68 @@ int create_csi_status_insert_query(char *insert_query, size_t max_len, csi_struc
 }
 
 int save_csi_matrix(PGconn** conn, int csi_status_id, csi_struct* csi_status, COMPLEX(* csi_matrix)[CSI_NC][CSI_MAX_SUBCARRIERS]) {
-    int fixed_insert_len = 90 + num_digits(csi_status_id) + long_num_digits(csi_status->tstamp);
-    int subcarrier_len = 0;
-    int antenna_len = 0;
-    char* insert_query = NULL;
+    if(*conn == NULL) {
+        return 0;
+    }
 
     int subcarrier, antenna, nc;
-    for(subcarrier = 0; subcarrier < csi_status->num_tones; subcarrier++) {
-        subcarrier_len = num_digits(subcarrier);
-        for(antenna = 0; antenna < csi_status->nr; antenna++) {
-            antenna_len = num_digits(antenna);
-            int rc_len = 0;
-            for(nc = 0; nc < csi_status->nc; nc++) {
-                // +1 represents rssi NOT IMPLEMENTED
-                rc_len += num_digits(csi_matrix[antenna][nc][subcarrier].real) +
-                        num_digits(csi_matrix[antenna][nc][subcarrier].imag) + 1;
-            }
 
-            size_t len = (size_t) (fixed_insert_len + subcarrier_len + antenna_len + rc_len);
-            insert_query = malloc(len);
-            sprintf(insert_query, "INSERT INTO csi_data VALUES(DEFAULT,'%" PRIu64"','%d','%d','%d'",
+    // max possible lenght
+    int max_len = 27 + ((csi_status->num_tones * csi_status->nr) * 122);
+    char* insert_query = NULL;
+    insert_query = malloc((sizeof(char) * max_len));
+    sprintf(insert_query, "INSERT INTO csi_data VALUES");
+
+    for(subcarrier = 0; subcarrier < csi_status->num_tones; subcarrier++) {
+        for(antenna = 0; antenna < csi_status->nr; antenna++) {
+            sprintf(insert_query, "%s (DEFAULT,'%" PRIu64"','%d','%d','%d'",
+                    insert_query,
                     csi_status->tstamp,
                     csi_status_id,
-                    antenna,
-                    subcarrier
+                    (antenna + 1),
+                    (subcarrier + 1)
             );
 
-            char aux[250];
             for(nc = 0; nc < csi_status->nc; nc++) {
-                sprintf(aux, ",'%d','%d','%d'", csi_matrix[antenna][nc][subcarrier].real,
-                        csi_matrix[antenna][nc][subcarrier].imag, 0);
-                strcat(insert_query, aux);
+                sprintf(insert_query, "%s,'%d','%d','%d'",
+                        insert_query,
+                        csi_matrix[antenna][nc][subcarrier].real,
+                        csi_matrix[antenna][nc][subcarrier].imag,
+                        0
+                );
             }
-            strcat(insert_query, ")");
 
-            printf("%s\n", insert_query);
-
-            free(insert_query);
+            if((subcarrier+1) == csi_status->num_tones && (antenna+1) == csi_status->nr) {
+                strcat(insert_query, ");");
+            } else {
+                strcat(insert_query, "),");
+            }
         }
     }
 
-    printf("FINISHED");
+    PGresult *res;
+    res = PQexec(*conn, insert_query);
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        printf("ERROR: Could not insert CSI matrix: %s", PQerrorMessage(*conn));
+        PQclear(res);
+        pg_close(conn);
+        return 0;
+    }
+
+    free(insert_query);
+    PQclear(res);
+    return 1;
+}
+
+int save_csi(PGconn** conn, csi_struct* csi_status, COMPLEX(* csi_matrix)[CSI_NC][CSI_MAX_SUBCARRIERS]) {
+    int csi_status_id = save_csi_status(conn, csi_status);
+    if(!csi_status_id) {
+        return 0;
+    }
+
+    if(!save_csi_matrix(conn, csi_status_id, csi_status, csi_matrix)) {
+        return 0;
+    }
 
     return 1;
 }

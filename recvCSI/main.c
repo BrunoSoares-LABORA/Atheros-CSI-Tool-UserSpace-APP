@@ -93,6 +93,8 @@ int main(int argc, char* argv[])
 
     quit = 0;
     total_msg_cnt = 0;
+
+    csi_init_table(&conn);
     
     while(1) {
         if (1 == quit){
@@ -107,13 +109,7 @@ int main(int argc, char* argv[])
         if (cnt){
             total_msg_cnt += 1;
 
-            /* fill the status struct with information about the rx packet */
             record_status(buf_addr, cnt, csi_status);
-
-            /* 
-             * fill the payload buffer with the payload
-             * fill the CSI matrix with the extracted CSI value
-             */
             record_csi_payload(buf_addr, csi_status, data_buf, csi_matrix);
 
 //            int i, j, k;
@@ -127,8 +123,7 @@ int main(int argc, char* argv[])
 //                printf("\n");
 //            }
 
-//            save_csi_status(&conn, csi_status);
-            save_csi_matrix(&conn, 1, csi_status, csi_matrix);
+            save_csi(&conn, csi_status, csi_matrix);
             
             /* log the received data for off-line processing */
 //            if (log_flag){

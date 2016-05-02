@@ -13,6 +13,7 @@
  * =====================================================================================
  */
 #include <stdbool.h>
+#define _POSIX_C_SOURCE 200809L
 #define Kernel_CSI_ST_LEN 23
 #define CSI_NR 3
 #define CSI_NC 3

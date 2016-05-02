@@ -1,12 +1,29 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include <libpq-fe.h>
 #include <inttypes.h>
 
 #include "csi_fun.h"
 #include "csi_persistence.h"
+
+int num_digits(int number) {
+    int digits = 0;
+    while (number != 0) {
+        number /= 10;
+        digits++;
+    }
+    return digits;
+}
+
+int long_num_digits(long number) {
+    int digits = 0;
+    while (number != 0) {
+        number /= 10;
+        digits++;
+    }
+    return digits;
+}
 
 void pg_close(PGconn** conn) {
     if(*conn != NULL) {
@@ -16,7 +33,7 @@ void pg_close(PGconn** conn) {
 }
 
 int pg_connect(PGconn** conn) {
-    int port_len = (int) (floor(log10(abs(PG_PORT))) + 1);
+    int port_len = (int) num_digits(PG_PORT);
     int str_len = (int) (40 + port_len + strlen(PG_USER) + strlen(PG_PASS) + strlen(PG_DBNAME) + strlen(PG_HOST));
     char connection_string[str_len];
 
@@ -139,22 +156,21 @@ int create_csi_status_insert_query(char *insert_query, size_t max_len, csi_struc
 }
 
 int save_csi_matrix(PGconn** conn, int csi_status_id, csi_struct* csi_status, COMPLEX(* csi_matrix)[CSI_NC][CSI_MAX_SUBCARRIERS]) {
-    int fixed_insert_len = 90 + ((int) (floor(log10(abs(csi_status_id))) + 1)) +
-            ((int) (floor(log10(abs(csi_status->tstamp))) + 1));
+    int fixed_insert_len = 90 + num_digits(csi_status_id) + long_num_digits(csi_status->tstamp);
     int subcarrier_len = 0;
     int antenna_len = 0;
     char* insert_query = NULL;
 
     int subcarrier, antenna, nc;
     for(subcarrier = 0; subcarrier < csi_status->num_tones; subcarrier++) {
-        subcarrier_len = (int) (floor(log10(abs(subcarrier))) + 1);
+        subcarrier_len = num_digits(subcarrier);
         for(antenna = 0; antenna < csi_status->nr; antenna++) {
-            antenna_len = (int) (floor(log10(abs(antenna))) + 1);
+            antenna_len = num_digits(antenna);
             int rc_len = 0;
             for(nc = 0; nc < csi_status->nc; nc++) {
-                // +2 represents rssi NOT IMPLEMENTED
-                rc_len += (((int) (floor(log10(abs(csi_matrix[antenna][nc][subcarrier].real))) + 1)) +
-                        ((int) (floor(log10(abs(csi_matrix[antenna][nc][subcarrier].imag))) + 1)) + 2);
+                // +1 represents rssi NOT IMPLEMENTED
+                rc_len += num_digits(csi_matrix[antenna][nc][subcarrier].real) +
+                        num_digits(csi_matrix[antenna][nc][subcarrier].imag) + 1;
             }
 
             size_t len = (size_t) (fixed_insert_len + subcarrier_len + antenna_len + rc_len);

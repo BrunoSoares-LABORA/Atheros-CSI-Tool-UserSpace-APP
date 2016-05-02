@@ -4,6 +4,9 @@
 #define PG_HOST     "127.0.0.1"
 #define PG_PORT     5432
 
+int num_digits(int number);
+int long_num_digits(long number);
+
 int pg_connect(PGconn** conn);
 void pg_close(PGconn** conn);
 int csi_init_table(PGconn** conn);

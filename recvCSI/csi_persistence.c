@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <libpq-fe.h>
 #include <inttypes.h>
+#include <libpq-fe.h>
 
 #include "csi_fun.h"
 #include "csi_persistence.h"
@@ -85,7 +85,7 @@ int csi_init_table(PGconn** conn) {
     sprintf(init_tables_query,
                  "CREATE TABLE IF NOT EXISTS csi_status(" \
                          "id INTEGER PRIMARY KEY DEFAULT nextval('csi_status_id_seq'::regclass)," \
-                         "timestamp_nano BIGINT," \
+                         "timestamp_milli BIGINT," \
                          "channel INTEGER," \
                          "channel_bw REAL," \
                          "rate INTEGER," \
@@ -104,7 +104,7 @@ int csi_init_table(PGconn** conn) {
                  ");" \
                  "CREATE TABLE IF NOT EXISTS csi_data(" \
                           "id INTEGER PRIMARY KEY DEFAULT nextval('csi_data_id_seq'::regclass)," \
-                          "timestamp_nano BIGINT," \
+                          "timestamp_milli BIGINT," \
                           "status_id INTEGER," \
                           "antenna INTEGER," \
                           "subcarrier INTEGER," \

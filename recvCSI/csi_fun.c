@@ -135,21 +135,25 @@ int read_csi_buf(unsigned char* buf_addr,int fd, int BUFSIZE){
 }
 
 void record_status(unsigned char* buf_addr, int cnt, csi_struct* csi_status){
-    long            ms;
+    long            ms, final_ts;
+    time_t          s;
     struct timespec spec;
 
     clock_gettime(CLOCK_REALTIME, &spec);
+
+    s  = spec.tv_sec;
     ms = (long) round(spec.tv_nsec / 1.0e6);
+    final_ts = ((long) s * 1000) + ms;
 
     if (is_big_endian()){
-        csi_status->tstamp  = (u_int64_t) ms;
+        csi_status->tstamp  = (u_int64_t) final_ts;
         csi_status->csi_len = (u_int16_t) (((buf_addr[8] << 8) & 0xff00) | (buf_addr[9] & 0x00ff));
         csi_status->channel = (u_int16_t) (((buf_addr[10] << 8) & 0xff00) | (buf_addr[11] & 0x00ff));
         csi_status->buf_len = (u_int16_t) (((buf_addr[cnt - 2] << 8) & 0xff00) | (buf_addr[cnt - 1] & 0x00ff));
         csi_status->payload_len = (u_int16_t) (((buf_addr[csi_st_len] << 8) & 0xff00) |
                                                ((buf_addr[csi_st_len + 1]) & 0x00ff));
     }else{
-        csi_status->tstamp  = (u_int64_t) ms;
+        csi_status->tstamp  = (u_int64_t) final_ts;
         csi_status->channel = (u_int16_t) (((buf_addr[11] << 8) & 0xff00) | (buf_addr[10] & 0x00ff));
         csi_status->buf_len = (u_int16_t) (((buf_addr[cnt - 1] << 8) & 0xff00) | (buf_addr[cnt - 2] & 0x00ff));
         csi_status->payload_len = (u_int16_t) (((buf_addr[csi_st_len + 1] << 8) & 0xff00) |

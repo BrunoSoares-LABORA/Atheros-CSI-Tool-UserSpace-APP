@@ -1,6 +1,6 @@
-#define PG_USER     "postgres"
-#define PG_PASS     "postgres"
-#define PG_DBNAME   "postgres"
+#define PG_USER     "csi"
+#define PG_PASS     "csi"
+#define PG_DBNAME   "csi"
 #define PG_HOST     "127.0.0.1"
 #define PG_PORT     5432
 

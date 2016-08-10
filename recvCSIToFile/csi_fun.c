@@ -15,11 +15,11 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <math.h>
-#include <time.h>
 
 #include "csi_fun.h"
 
@@ -45,7 +45,7 @@ int bit_convert(int data, int maxbit)
     return data;
 }
 
-void fill_csi_matrix(u_int8_t* csi_addr, int nr, int nc, int num_tones, COMPLEX(* csi_matrix)[CSI_NC][CSI_MAX_SUBCARRIERS]){
+void fill_csi_matrix(u_int8_t* csi_addr, int nr, int nc, int num_tones, COMPLEX(* csi_matrix)[3][114]){
     u_int8_t k;
     u_int8_t bits_left, nr_idx, nc_idx;
     u_int32_t bitmask, idx, current_data, h_data, h_idx;
@@ -121,43 +121,45 @@ void close_csi_device(int fd){
     //remove("/dev/CSI_dev");
 }
 
+
 int read_csi_buf(unsigned char* buf_addr,int fd, int BUFSIZE){
     int cnt;
     /* listen to the port
      * read when 1, a csi is reported from kernel
      *           2, time out
      */           
-    cnt = (int) read(fd, buf_addr, (size_t) BUFSIZE);
+    cnt = read(fd,buf_addr,BUFSIZE);
     if(cnt)
         return cnt;
     else
         return 0;
 }
-
 void record_status(unsigned char* buf_addr, int cnt, csi_struct* csi_status){
-    long            ms, final_ts;
-    time_t          s;
-    struct timespec spec;
-
-    clock_gettime(CLOCK_REALTIME, &spec);
-
-    s  = spec.tv_sec;
-    ms = (long) round(spec.tv_nsec / 1.0e6);
-    final_ts = ((long) s * 1000) + ms;
-
     if (is_big_endian()){
-        csi_status->tstamp  = (u_int64_t) final_ts;
-        csi_status->csi_len = (u_int16_t) (((buf_addr[8] << 8) & 0xff00) | (buf_addr[9] & 0x00ff));
-        csi_status->channel = (u_int16_t) (((buf_addr[10] << 8) & 0xff00) | (buf_addr[11] & 0x00ff));
-        csi_status->buf_len = (u_int16_t) (((buf_addr[cnt - 2] << 8) & 0xff00) | (buf_addr[cnt - 1] & 0x00ff));
-        csi_status->payload_len = (u_int16_t) (((buf_addr[csi_st_len] << 8) & 0xff00) |
-                                               ((buf_addr[csi_st_len + 1]) & 0x00ff));
+        csi_status->tstamp  =   
+            ((buf_addr[0] << 56) & 0x00000000000000ff) | ((buf_addr[1] << 48) & 0x000000000000ff00) | 
+            ((buf_addr[2] << 40) & 0x0000000000ff0000) | ((buf_addr[3] << 32) & 0x00000000ff000000) | 
+            ((buf_addr[4] << 24) & 0x000000ff00000000) | ((buf_addr[5] << 16) & 0x0000ff0000000000) | 
+            ((buf_addr[6] << 8)  & 0x00ff000000000000) | ((buf_addr[7])       & 0xff00000000000000) ; 
+        csi_status->csi_len = ((buf_addr[8] << 8) & 0xff00) | (buf_addr[9] & 0x00ff);
+        csi_status->channel = ((buf_addr[10] << 8) & 0xff00) | (buf_addr[11] & 0x00ff);
+        csi_status->buf_len = ((buf_addr[cnt-2] << 8) & 0xff00) | (buf_addr[cnt-1] & 0x00ff);
+        csi_status->payload_len = ((buf_addr[csi_st_len] << 8) & 0xff00) |
+            ((buf_addr[csi_st_len + 1]) & 0x00ff);
     }else{
-        csi_status->tstamp  = (u_int64_t) final_ts;
-        csi_status->channel = (u_int16_t) (((buf_addr[11] << 8) & 0xff00) | (buf_addr[10] & 0x00ff));
-        csi_status->buf_len = (u_int16_t) (((buf_addr[cnt - 1] << 8) & 0xff00) | (buf_addr[cnt - 2] & 0x00ff));
-        csi_status->payload_len = (u_int16_t) (((buf_addr[csi_st_len + 1] << 8) & 0xff00) |
-                                               (buf_addr[csi_st_len] & 0x00ff));
+        csi_status->tstamp  =   
+            ((buf_addr[7] << 56) & 0x00000000000000ff) | ((buf_addr[6] << 48) & 0x000000000000ff00) | 
+            ((buf_addr[5] << 40) & 0x0000000000ff0000) | ((buf_addr[4] << 32) & 0x00000000ff000000) | 
+            ((buf_addr[3] << 24) & 0x000000ff00000000) | ((buf_addr[2] << 16) & 0x0000ff0000000000) | 
+            ((buf_addr[1] << 8)  & 0x00ff000000000000) | ((buf_addr[0])       & 0xff00000000000000) ; 
+        csi_status->csi_len = ((buf_addr[9] << 8) & 0xff00) | (buf_addr[8] & 0x00ff);
+        
+        csi_status->channel = ((buf_addr[11] << 8) & 0xff00) | (buf_addr[10] & 0x00ff);
+       
+        csi_status->buf_len = ((buf_addr[cnt-1] << 8) & 0xff00) | (buf_addr[cnt-2] & 0x00ff);
+        
+        csi_status->payload_len = ((buf_addr[csi_st_len+1] << 8) & 0xff00) | 
+            (buf_addr[csi_st_len] & 0x00ff);
     }
     csi_status->phyerr    = buf_addr[12];
     csi_status->noise     = buf_addr[13];
@@ -173,7 +175,7 @@ void record_status(unsigned char* buf_addr, int cnt, csi_struct* csi_status){
     csi_status->rssi_2    = buf_addr[22];
 }
 
-void record_csi_payload(unsigned char* buf_addr, csi_struct* csi_status, unsigned char* data_buf, COMPLEX(* csi_matrix)[CSI_NC][CSI_MAX_SUBCARRIERS]){
+void record_csi_payload(unsigned char* buf_addr, csi_struct* csi_status, unsigned char* data_buf, COMPLEX(* csi_matrix)[3][114]){
     int i;
     int nr,nc,num_tones;
     u_int8_t* csi_addr;
@@ -192,6 +194,11 @@ void record_csi_payload(unsigned char* buf_addr, csi_struct* csi_status, unsigne
     }
     
     /* extract the CSI and fill the complex matrix */
-    csi_addr = (u_int8_t *) (buf_addr + csi_st_len);
+    csi_addr = buf_addr + csi_st_len + 2;
     fill_csi_matrix(csi_addr,nr,nc,num_tones, csi_matrix);
+}
+void  porcess_csi(unsigned char* data_buf, csi_struct* csi_status,COMPLEX(* csi_buf)[3][114]){
+    /* here is the function for csi processing
+     * you can install your own function */
+    return;
 }

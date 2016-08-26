@@ -26,12 +26,14 @@ function x = plot_hand_test()
     title('ABS: Sem mão');
     xlabel('f (Hz)');
     ylabel('|P1(f)|');
+    ylim([0 60]);
     
     subplot(3,2,3);
     plot(f,P1_real_1);
     title('REAL: Sem mão');
     xlabel('f (Hz)');
     ylabel('|P1(f)|');
+    ylim([-1500 1000]);
     
     subplot(3,2,5);
     plot(f,P1_angle_1);
@@ -62,12 +64,14 @@ function x = plot_hand_test()
     title('ABS: Com mão');
     xlabel('f (Hz)');
     ylabel('|P1(f)|');
+    ylim([0 60]);
     
     subplot(3,2,4);
     plot(f,P1_real_2);
     title('REAL: Com mão');
     xlabel('f (Hz)');
     ylabel('|P1(f)|');
+    ylim([-1500 1000]);
     
     subplot(3,2,6);
     plot(f,P1_angle_2);

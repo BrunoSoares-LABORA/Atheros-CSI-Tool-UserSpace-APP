@@ -1,4 +1,4 @@
-function [mean, variance, last_index] = test_fft_mean(test_dir_prefix, num_traces, rx, tx)
+function [abs_r, real_r, angle_r, last_index] = test_fft_mean_2(test_dir_prefix, num_traces, rx, tx)
     frequency = 100;
     lenght = 30;
     max_data = (lenght + 2) * frequency;
@@ -20,12 +20,10 @@ function [mean, variance, last_index] = test_fft_mean(test_dir_prefix, num_trace
     max_useful = floor(last_index/frequency) * frequency;
     samples_data = samples_data([1:max_useful],:,:);
     
-    real_mean = sum(real(samples_data), 3)/num_traces;
-    imag_mean = sum(imag(samples_data), 3)/num_traces;
-    mean = complex(real_mean, imag_mean);
-    
-    real_variance = std(real(samples_data), 0, 3);
-    imag_variance = std(imag(samples_data), 0, 3);
-    variance = complex(real_variance, imag_variance);
+    real_data = real(samples_data);
+    real_r = sum(real_data, 3) / num_traces;
+    abs_data = abs(samples_data/lenght);
+    abs_r = sum(abs_data, 3) / num_traces;
+    angle_data = angle(samples_data);
+    angle_r = sum(angle_data, 3) / num_traces;
 end
-

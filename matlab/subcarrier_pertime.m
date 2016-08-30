@@ -6,8 +6,8 @@ function subcarriers=subcarrier_pertime(log_file_path, rx, tx)
         csi_data = atheros_csi{1,index}.csi;
         
         % gets rx and tx subcarriers data
-        [M N ~] = size(csi_data);
-        if M >= rx && N >= tx
+        [M N S] = size(csi_data);
+        if M >= rx && N >= tx && S == atheros_csi{1,1}.num_tones
             csi_data = csi_data(rx,tx,:);
             csi_data = squeeze(csi_data).';
             subcarriers(index,:) = csi_data(1,:);

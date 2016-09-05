@@ -1,14 +1,16 @@
-function [mean, variance, last_index] = test_fft_mean(test_dir_prefix, num_traces, rx, tx)
-    frequency = 100;
-    lenght = 30;
-    max_data = (lenght + 2) * frequency;
-    
+function [x] = test_fft_mean(test_dir_prefix, num_traces, rx, tx)    
     last_index = -1;
     for i = 1:num_traces
         sample_file = strcat(test_dir_prefix, '_', int2str(i));
-        csi = subcarrier_pertime(sample_file, rx, tx);
+        atheros_csi = read_log_file(sample_file);
+        csi = subcarrier_pertime(atheros_csi);
+        csi = squeeze(csi(rx,tx,:,:)).';
+        
         [csi_index, ~] = size(csi);
         if last_index == -1 || last_index > csi_index
+            if last_index == -1
+                max_data = round(csi_index * 1.2);
+            end
             last_index = csi_index;
         end
         csi_adjusted = csi([1:last_index], :);
@@ -17,15 +19,18 @@ function [mean, variance, last_index] = test_fft_mean(test_dir_prefix, num_trace
         samples_data(:,:,i) = csi_fft;
     end
     
-    max_useful = floor(last_index/frequency) * frequency;
-    samples_data = samples_data([1:max_useful],:,:);
+    samples_data = samples_data([1:last_index],:,:);
     
-    real_mean = sum(real(samples_data), 3)/num_traces;
-    imag_mean = sum(imag(samples_data), 3)/num_traces;
-    mean = complex(real_mean, imag_mean);
+    real_data = real(samples_data);
+    real_r = sum(real_data, 3) / num_traces;
+    abs_data = abs(samples_data/last_index);
+    abs_r = sum(abs_data, 3) / num_traces;
+    angle_data = angle(samples_data);
+    angle_r = sum(angle_data, 3) / num_traces;
     
-    real_variance = std(real(samples_data), 0, 3);
-    imag_variance = std(imag(samples_data), 0, 3);
-    variance = complex(real_variance, imag_variance);
+    x = struct();
+    x.abs = abs_r;
+    x.real = real_r;
+    x.angle = angle_r;
+    x.last_index = last_index;
 end
-

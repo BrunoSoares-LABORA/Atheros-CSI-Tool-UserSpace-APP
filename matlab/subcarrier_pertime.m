@@ -1,16 +1,13 @@
-function subcarriers=subcarrier_pertime(log_file_path, rx, tx)
-    atheros_csi = read_log_file(log_file_path).';
-    subcarriers = zeros(1,atheros_csi{1,1}.num_tones);
+function subcarriers = subcarrier_pertime(csi)
+    atheros_csi = csi.';
+    num_tones = atheros_csi{1,1}.num_tones;
     n_traces = size(atheros_csi);
     for index = 1:n_traces(1,2)
         csi_data = atheros_csi{1,index}.csi;
-        
         % gets rx and tx subcarriers data
-        [M N S] = size(csi_data);
-        if M >= rx && N >= tx && S == atheros_csi{1,1}.num_tones
-            csi_data = csi_data(rx,tx,:);
-            csi_data = squeeze(csi_data).';
-            subcarriers(index,:) = csi_data(1,:);
+        [M, N, S] = size(csi_data);
+        if S == num_tones && M == 3 && N == 3
+            subcarriers(:,:,:,index) = csi_data;
         end
     end
 end

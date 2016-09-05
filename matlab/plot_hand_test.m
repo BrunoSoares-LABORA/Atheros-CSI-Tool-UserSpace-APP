@@ -1,82 +1,80 @@
-function x = plot_hand_test(rx, tx)
-    x = true;
-    [mean1, variance1, index1] = test_fft_mean('sample/hand_test_100/hand_test_without_hand_100', 30, rx, tx);
-    disp('lido 1');
-    [mean2, variance2, index2] = test_fft_mean('sample/hand_test_100/hand_test_with_hand_100', 30, rx, tx);
-    disp('lido 2');
+function [] = plot_hand_test(rx, tx)
+    Fs = 1000;
+    without_hand = test_fft_mean('sample/hand_test_1000/without_hand_1000', 30, rx, tx);
+    with_hand = test_fft_mean('sample/hand_test_1000/with_hand_1000', 30, rx, tx);
     
-    Fs = 100;
-    T = 1/Fs;
-    L = 30;
-    t = (0:L-1)*T;
-    
-    P2_abs_1 = abs(mean1/L);
-    P2_real_1 = real(mean1);
-    P2_angle_1 = angle(mean1);
-    
-    P1_abs_1 = P2_abs_1([1:L/2+1],:);
-    P1_abs_1([2:end-1],:) = 2*P1_abs_1([2:end-1],:);
-    P1_real_1 = P2_real_1([1:L/2+1],:);
-    P1_real_1([2:end-1],:) = 2*P1_real_1([2:end-1],:);
-    P1_angle_1 = P2_angle_1([1:L/2+1],:);
-    P1_angle_1([2:end-1],:) = 2*P1_angle_1([2:end-1],:);
-    
-    f = Fs*(0:(L/2))/L;
-    
-    subplot(3,2,1);
-    plot(f,P1_abs_1);
-    title('ABS: Sem mão');
-    xlabel('f (Hz)');
-    ylabel('|P1(f)|');
-    ylim([0 500]);
-    
-    subplot(3,2,3);
-    plot(f,P1_real_1);
-    title('REAL: Sem mão');
-    xlabel('f (Hz)');
-    ylabel('|P1(f)|');
-    ylim([-15000 15000]);
-    
-    subplot(3,2,5);
-    plot(f,P1_angle_1);
-    title('ANGLE: Sem mão');
-    xlabel('f (Hz)');
-    ylabel('|P1(f)|');
-    ylim([-10 10]);
-    
-    % with hand    
-    P2_abs_2 = abs(mean2/L);
-    P2_real_2 = real(mean2);
-    P2_angle_2 = angle(mean2);
-    
-    P1_abs_2 = P2_abs_2([1:L/2+1],:);
-    P1_abs_2([2:end-1],:) = 2*P1_abs_2([2:end-1],:);
-    P1_real_2 = P2_real_2([1:L/2+1],:);
-    P1_real_2([2:end-1],:) = 2*P1_real_2([2:end-1],:);
-    P1_angle_2 = P2_angle_2([1:L/2+1],:);
-    P1_angle_2([2:end-1],:) = 2*P1_angle_2([2:end-1],:);
-    
-    f = Fs*(0:(L/2))/L;
-    
-    subplot(3,2,2);
-    plot(f,P1_abs_2);
-    title('ABS: Com mão');
-    xlabel('f (Hz)');
-    ylabel('|P1(f)|');
-    ylim([0 500]);
-    
-    subplot(3,2,4);
-    plot(f,P1_real_2);
-    title('REAL: Com mão');
-    xlabel('f (Hz)');
-    ylabel('|P1(f)|');
-    ylim([-15000 15000]);
-    
-    subplot(3,2,6);
-    plot(f,P1_angle_2);
-    title('ANGLE: Com mão');
-    xlabel('f (Hz)');
-    ylabel('|P1(f)|');
-    ylim([-10 10]);
-end
+    for subcarrier = 1:56
+        %without hand
+        L = without_hand.last_index;
+        without_abs = without_hand.abs([1:L/2+1], subcarrier);
+        without_abs([2:end-1]) = 2*without_abs([2:end-1]);
+        without_real = without_hand.real([1:L/2+1], subcarrier);
+        without_real([2:end-1]) = 2*without_real([2:end-1]);
+        without_angle = without_hand.angle([1:L/2+1], subcarrier);
+        without_angle([2:end-1]) = 2*without_angle([2:end-1]);
+        
+        %with hand
+        L = with_hand.last_index;
+        with_abs = with_hand.abs([1:L/2+1], subcarrier);
+        with_abs([2:end-1]) = 2*with_abs([2:end-1]);
+        with_real = with_hand.real([1:L/2+1], subcarrier);
+        with_real([2:end-1]) = 2*with_real([2:end-1]);
+        with_angle = with_hand.angle([1:L/2+1], subcarrier);
+        with_angle([2:end-1]) = 2*with_angle([2:end-1]);
+        
+        absy = [min([min(without_abs), min(with_abs)]), max([max(without_abs), max(with_abs)])];
+        realy = [min([min(without_real), min(with_real)]), max([max(without_real), max(with_real)])];
+        angley = [min([min(without_angle), min(with_angle)]), max([max(without_angle), max(with_angle)])];
 
+        L = without_hand.last_index;
+        f = Fs*(0:(L/2))/L;
+        subplot(3,2,1);
+        plot(f, without_abs);
+        title(strcat('ABS: Sem mão - Portadora:', int2str(subcarrier)));
+        xlabel('f (Hz)');
+        ylabel('|P1(f)|');
+        ylim(absy);
+
+        subplot(3,2,3);
+        plot(f, without_real);
+        title(strcat('REAL: Sem mão - Portadora:', int2str(subcarrier)));
+        xlabel('f (Hz)');
+        ylabel('|P1(f)|');
+        ylim(realy);
+
+        subplot(3,2,5);
+        plot(f, without_angle);
+        title(strcat('ANGLE: Sem mão - Portadora:', int2str(subcarrier)));
+        xlabel('f (Hz)');
+        ylabel('|P1(f)|');
+        ylim(angley);
+
+        % with hand
+        L = with_hand.last_index;
+        f = Fs*(0:(L/2))/L;
+        subplot(3,2,2);
+        plot(f, with_abs);
+        title(strcat('ABS: Com mão - Portadora:', int2str(subcarrier)));
+        xlabel('f (Hz)');
+        ylabel('|P1(f)|');
+        ylim(absy);
+
+        subplot(3,2,4);
+        plot(f, with_real);
+        title(strcat('REAL: Com mão - Portadora:', int2str(subcarrier)));
+        xlabel('f (Hz)');
+        ylabel('|P1(f)|');
+        ylim(realy);
+
+        subplot(3,2,6);
+        plot(f, with_angle);
+        title(strcat('ANGLE: Com mão - Portadora:', int2str(subcarrier)));
+        xlabel('f (Hz)');
+        ylabel('|P1(f)|');
+        ylim(angley);
+        
+        set(gcf, 'PaperUnits', 'inches', 'PaperPosition', [0 0 21.3 10.6])
+        filename = strcat('/home/bruno/matlabout/', int2str(rx), '-', int2str(tx), '_', int2str(subcarrier));
+        print(filename,'-dpng','-r0');
+    end
+end

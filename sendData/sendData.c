@@ -161,13 +161,10 @@ int main(int argc, char *argv[])
 	socket_address.sll_addr[5] = DstAddr[5];
  
 	/* Send packet */
+    int wait_time = 1000000/Cnt;
     for(;Cnt>0;Cnt--)
     {
-        /* you set the time interval between two transmitting packets 
-         * for example, here we set it to 50 microseconds
-         * set to 0 if you don't need it
-         */
-        if (usleep(50) == -1){
+        if (usleep(wait_time) == -1){
             printf("sleep failed\n");
         }
         if (sendto(sockfd, sendbuf, tx_len, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0){

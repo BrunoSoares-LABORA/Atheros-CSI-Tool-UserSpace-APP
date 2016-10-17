@@ -15,37 +15,34 @@
 
 #include "sender.h"
 
-struct ifreq get_interface_index(char *if_name) {
+struct ifreq get_interface_index(int rawsock, char *if_name) {
 	struct ifreq if_idx;
 	memset(&if_idx, 0, sizeof(struct ifreq));
 	strncpy(if_idx.ifr_name, if_name, IFNAMSIZ-1);
+	if(ioctl(rawsock, SIOCGIFINDEX, &if_idx) < 0) {
+	    printf("Could not get raw socket interface\n");
+	}
+	
 	return if_idx;
 }
 
-struct ifreq get_interface_mac_address(char *if_name) {
+struct ifreq get_interface_mac_address(int rawsock, char *if_name) {
 	struct ifreq if_mac;
 	memset(&if_mac, 0, sizeof(struct ifreq));
 	strncpy(if_mac.ifr_name, if_name, IFNAMSIZ-1);
+	if(ioctl(rawsock, SIOCGIFHWADDR, &if_mac) < 0) {
+	    printf("Could not get raw socket source mac\n");
+	}
+	
 	return if_mac;
 }
 
-int create_raw_socket(struct ifreq if_idx, struct ifreq if_mac) {
+int create_raw_socket() {
 	int rawsock;
 	
 	/* Open RAW socket to send on */
 	if((rawsock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) == -1) {
 	    printf("Could not create raw socket\n");
-	    return -1;
-	}
-	
-	if(ioctl(rawsock, SIOCGIFINDEX, &if_idx) < 0) {
-	    printf("Could not set raw socket interface\n");
-	    return -1;
-	}
-	
-	/* Get the MAC address of the interface to send on */
-	if(ioctl(rawsock, SIOCGIFHWADDR, &if_mac) < 0) {
-	    printf("Could not set raw socket source mac\n");
 	    return -1;
 	}
 	

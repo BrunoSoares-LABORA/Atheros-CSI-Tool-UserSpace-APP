@@ -103,20 +103,20 @@ int main(int argc, char* argv[]) {
 			} else if(strcmp("SEND_PACKET", command_buffer) == 0) {
 				// Receive destination mac address
 				memset(&input_buffer[0], 0, sizeof(input_buffer));
-				recv(clientfd, input_buffer, 95, 0);
+				recv(clientfd, input_buffer, 17, 0);
 				sscanf(input_buffer,"%x:%x:%x:%x:%x:%x",&DstAddr[0],&DstAddr[1],&DstAddr[2],&DstAddr[3],&DstAddr[4],&DstAddr[5]);
 				printf("DstMacAddr: %02x:%02x:%02x:%02x:%02x:%02x\n",DstAddr[0],DstAddr[1],DstAddr[2],DstAddr[3],DstAddr[4],DstAddr[5]);
 				
 				// Receive how much packets need to send
 				memset(&input_buffer[0], 0, sizeof(input_buffer));
-				recv(clientfd, input_buffer, 95, 0);
+				recv(clientfd, input_buffer, 11, 0);
 				quantity_of_packets = atoi(input_buffer);
 				printf("Sending %d packets...\n", quantity_of_packets);
 				
 				// send packets...
-				struct ifreq if_idx = get_interface_index(ifName);
-				struct ifreq if_mac = get_interface_mac_address(ifName);
 				int rawsock = create_raw_socket(if_idx, if_mac);
+				struct ifreq if_idx = get_interface_index(rawsock, ifName);
+				struct ifreq if_mac = get_interface_mac_address(rawsock, ifName);
 				PACKET packet_to_send = create_packet(if_idx, if_mac, DstAddr);
 				
 				printf("Sending packets...\n");

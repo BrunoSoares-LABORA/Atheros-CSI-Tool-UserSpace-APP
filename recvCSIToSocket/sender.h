@@ -8,8 +8,8 @@ typedef struct {
 	int len;
 } PACKET;
 
-struct ifreq get_interface_index(char *if_name);
-struct ifreq get_interface_mac_address(char *if_name);
-int create_raw_socket(struct ifreq if_idx, struct ifreq if_mac);
+int create_raw_socket();
+struct ifreq get_interface_index(int rawsock, char *if_name);
+struct ifreq get_interface_mac_address(int rawsock, char *if_name);
 PACKET create_packet(struct ifreq if_idx, struct ifreq if_mac, unsigned int dst_addr[6]);
 void send_packet(int rawsock, PACKET packet_to_send, unsigned int quantity);

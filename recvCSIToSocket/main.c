@@ -11,9 +11,12 @@
 #include <errno.h>
 #include <time.h>
 #include <math.h>
+#include <net/if.h>
+#include <linux/if_packet.h>
 
 #include "csi_fun.h"
 #include "socket.h"
+#include "sender.h"
 
 #define BUFSIZE 4096
 
@@ -29,10 +32,10 @@ void sig_handler(int signo) {
 
 int main(int argc, char* argv[]) {
 	/* check usage */
-	if (argc != 2){
-		printf("/**************************************/\n");
-		printf("/*   Usage: recv_csi <port>    */\n");
-		printf("/**************************************/\n");
+	if (argc != 3) {
+		printf("/*******************************************/\n");
+		printf("/*   Usage: recv_csi <port> <interface>    */\n");
+		printf("/*******************************************/\n");
 		return 0;
 	}
 
@@ -52,6 +55,13 @@ int main(int argc, char* argv[]) {
 	csi_struct*   csi_status = (csi_struct*)malloc(sizeof(csi_struct));
 	quit = 0;
 	char command_buffer[50];
+	
+	/* Send vars */
+	char ifName[IFNAMSIZ];
+	char input_buffer[100];
+	unsigned int DstAddr[6];
+	int quantity_of_packets;
+	strcpy(ifName, argv[2]);
 	
 	/* Create device reading */
 	fd = open_csi_device();
@@ -90,6 +100,28 @@ int main(int argc, char* argv[]) {
 				send(clientfd, &csi_buf_len, sizeof(csi_buf_len), 0);
 				send(clientfd, buf_addr, csi_buf_len, 0);
 				printf("CSI packet sent\n");
+			} else if(strcmp("SEND_PACKET", command_buffer) == 0) {
+				// Receive destination mac address
+				memset(&input_buffer[0], 0, sizeof(input_buffer));
+				recv(clientfd, input_buffer, 95, 0);
+				sscanf(input_buffer,"%x:%x:%x:%x:%x:%x",&DstAddr[0],&DstAddr[1],&DstAddr[2],&DstAddr[3],&DstAddr[4],&DstAddr[5]);
+				printf("DstMacAddr: %02x:%02x:%02x:%02x:%02x:%02x\n",DstAddr[0],DstAddr[1],DstAddr[2],DstAddr[3],DstAddr[4],DstAddr[5]);
+				
+				// Receive how much packets need to send
+				memset(&input_buffer[0], 0, sizeof(input_buffer));
+				recv(clientfd, input_buffer, 95, 0);
+				quantity_of_packets = atoi(input_buffer);
+				printf("Sending %d packets...\n", quantity_of_packets);
+				
+				// send packets...
+				struct ifreq if_idx = get_interface_index(ifName);
+				struct ifreq if_mac = get_interface_mac_address(ifName);
+				int rawsock = create_raw_socket(if_idx, if_mac);
+				PACKET packet_to_send = create_packet(if_idx, if_mac, DstAddr);
+				
+				printf("Sending packets...\n");
+				send_packet(rawsock, packet_to_send, quantity_of_packets);
+				printf("Packets sent\n");
 			} else {
 				printf("Unknown command received, closing connection...\n");
 				break;

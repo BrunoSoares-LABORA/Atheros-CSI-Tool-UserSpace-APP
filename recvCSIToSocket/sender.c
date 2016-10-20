@@ -102,15 +102,9 @@ PACKET create_packet(struct ifreq if_idx, struct ifreq if_mac, unsigned int dst_
 void send_packet(int rawsock, PACKET packet_to_send, unsigned int quantity) {
     int wait_time = 1000000/quantity;
 	for(; quantity > 0; quantity--) {
-		if (usleep(wait_time) == -1) {
-			printf("sleep failed\n");
-		}
-		
-		if (sendto(rawsock, packet_to_send.send_buffer, packet_to_send.len, 0,
+		usleep(wait_time);
+		sendto(rawsock, packet_to_send.send_buffer, packet_to_send.len, 0,
 			(struct sockaddr*)&packet_to_send.socket_address,
-			sizeof(struct sockaddr_ll)) < 0) 
-		{
-			printf("Send failed\n");
-		}
+			sizeof(struct sockaddr_ll));
 	}
 }

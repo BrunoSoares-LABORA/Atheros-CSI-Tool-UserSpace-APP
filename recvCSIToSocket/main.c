@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 	char ifName[IFNAMSIZ];
 	char input_buffer[100];
 	unsigned int DstAddr[6];
-	int quantity_of_packets;
+	int i, quantity_of_packets, until_seconds;
 	strcpy(ifName, argv[2]);
 	
 	/* Create device reading */
@@ -105,30 +105,32 @@ int main(int argc, char* argv[]) {
 				memset(&input_buffer[0], 0, sizeof(input_buffer));
 				recv(clientfd, input_buffer, 17, 0);
 				sscanf(input_buffer,"%x:%x:%x:%x:%x:%x",&DstAddr[0],&DstAddr[1],&DstAddr[2],&DstAddr[3],&DstAddr[4],&DstAddr[5]);
-				printf("DstMacAddr: %02x:%02x:%02x:%02x:%02x:%02x\n",DstAddr[0],DstAddr[1],DstAddr[2],DstAddr[3],DstAddr[4],DstAddr[5]);
 				
-				// Receive how much packets need to send
+				// Receive how much packets will be sent and loop size
 				memset(&input_buffer[0], 0, sizeof(input_buffer));
-				recv(clientfd, input_buffer, 11, 0);
-				quantity_of_packets = atoi(input_buffer);
-				printf("Sending %d packets...\n", quantity_of_packets);
+				recv(clientfd, input_buffer, 95, 0);
+				quantity_of_packets = atoi(strtok(input_buffer, "/"));
+				until_seconds = atoi(strtok(NULL, "/"));
 				
 				// send packets...
-				int rawsock = create_raw_socket(if_idx, if_mac);
+				int rawsock = create_raw_socket();
 				struct ifreq if_idx = get_interface_index(rawsock, ifName);
 				struct ifreq if_mac = get_interface_mac_address(rawsock, ifName);
 				PACKET packet_to_send = create_packet(if_idx, if_mac, DstAddr);
 				
-				printf("Sending packets...\n");
-				send_packet(rawsock, packet_to_send, quantity_of_packets);
+				printf("Sending packets %d for %d seconds...\n", quantity_of_packets, until_seconds);
+				for(i = 0; i < until_seconds; i++) {
+					send_packet(rawsock, packet_to_send, quantity_of_packets);
+				}
 				printf("Packets sent\n");
+				close(rawsock);
 			} else {
 				printf("Unknown command received, closing connection...\n");
 				break;
 			}
 		}
 
-		printf("Connection with client closed, closing devices...\n");
+		printf("Connection with client closed...\n");
 		close(clientfd);
 
 		if(quit == 1) {

@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 		seconds = atoi(argv[4]);
 	else
 		seconds = 1;
- 
+
 	/* Open RAW socket to send on */
 	if ((sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) == -1) {
 	    perror("socket");
@@ -138,7 +138,6 @@ int main(int argc, char *argv[])
         
 	    sendbuf[tx_len++] = 0xaa;
     } 
-    printf("Packet Length is: %d,pkt_num is: %d\n",tx_len,Cnt); 
 	
     /* Index of the network device */
 	socket_address.sll_ifindex = if_idx.ifr_ifindex;
@@ -179,3 +178,4 @@ int main(int argc, char *argv[])
 	
 	return 0;
 }
+

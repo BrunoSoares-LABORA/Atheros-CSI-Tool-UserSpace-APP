@@ -60,7 +60,6 @@ void *file_manager(void *vargp) {
 
     while(TRUE) {
         sprintf(file_name, "%s/outputs/%d", get_selfpath(), (int)time(NULL));
-        printf("file path: %s\n", file_name);
         write_file = fopen(file_name,"w");
         if (!write_file) {
             printf("Fail to open <output_file>, are you root?\n");
@@ -69,24 +68,27 @@ void *file_manager(void *vargp) {
         }
 
         ready_to_write = 1;
-        usleep(FILE_TIME_SEC*1000);
-
+        sleep(FILE_TIME_SEC);
         /* close file and add to the not recovered array */
         ready_to_write = 0;
         fclose(write_file);
-        strcpy(stored_files[file_index], file_name);
+
+        strcpy(stored_files[file_index%MAX_FILES], file_name);
         file_index++;
     }
 }
 
 char* get_selfpath() {
-    char *buff;
-    buff = (char*)malloc(sizeof(char) * 255);
+    char *path;
+    char buff[512];
+    path = (char*)malloc(sizeof(char) * 255);
     ssize_t len = readlink("/proc/self/exe", buff, sizeof(buff)-1);
 
     if (len != -1) {
-      buff[len] = '\0';
-      return buff;
+      // -9 because we need to remove the executable name
+      buff[len-9] = '\0';
+      sprintf(path, "%s",buff);
+      return path;
     }
 }
 

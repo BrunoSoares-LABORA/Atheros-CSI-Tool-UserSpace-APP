@@ -95,11 +95,18 @@ int main(int argc, char* argv[]) {
 				
 				record_status(buf_addr, cnt, csi_status);
 
-				printf("sending csi packet\n");
 				csi_buf_len = csi_status->buf_len;
+				printf("sending csi packet len: %d\n", csi_buf_len);
 				send(clientfd, &csi_buf_len, sizeof(csi_buf_len), 0);
-				send(clientfd, buf_addr, csi_buf_len, 0);
-				printf("CSI packet sent\n");
+				memset(&command_buffer[0], 0, sizeof(command_buffer));
+	                        recv(clientfd, command_buffer, 45, 0);
+				if(strcmp("RECEIVER_READY", command_buffer) == 0) {
+					send(clientfd, buf_addr, csi_buf_len, 0);
+					printf("CSI packet sent\n");
+				} else {
+					printf("Unknown command received '%s', closing connection...\n", command_buffer);
+					break;
+				}
 			} else if(strcmp("SEND_PACKET", command_buffer) == 0) {
 				// Receive destination mac address
 				memset(&input_buffer[0], 0, sizeof(input_buffer));

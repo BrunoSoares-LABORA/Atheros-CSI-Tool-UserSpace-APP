@@ -1,6 +1,7 @@
 function [x] = test_time_mean( file_path, rx, tx )
     csi = read_log_file(file_path);
-    csi_data = subcarrier_pertime(csi, rx, tx);
+    csi_data = subcarrier_pertime(csi);
+    csi_data = squeeze(csi_data(rx,tx,:,:)).';
     
     [csi_size, ~] = size(csi);
     [csi_data_size, ~] = size(csi_data);

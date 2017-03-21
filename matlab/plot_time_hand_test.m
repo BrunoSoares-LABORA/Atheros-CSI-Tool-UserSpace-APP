@@ -1,6 +1,6 @@
 function [] = plot_time_hand_test(rx, tx)
-    without_hand = test_time_mean('sample/hand_test_1000/hand_test_without_hand_1000_1', rx, tx);
-    with_hand = test_time_mean('sample/hand_test_1000/hand_test_with_hand_1000_1', rx, tx);
+    without_hand = test_time_mean('/home/bruno/atheros_test', rx, tx);
+    with_hand = test_time_mean('/home/bruno/atheros_test', rx, tx);
     
     for i = 1:2
         if i == 1

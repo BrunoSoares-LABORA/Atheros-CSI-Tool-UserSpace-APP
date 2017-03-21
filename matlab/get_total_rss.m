@@ -5,7 +5,6 @@
 %
 function ret = get_total_rss(csi_st)
     error(nargchk(1,1,nargin));
-
     % Careful here: rssis could be zero
     rssi_mag = 0;
     if csi_st.rssi_a ~= 0

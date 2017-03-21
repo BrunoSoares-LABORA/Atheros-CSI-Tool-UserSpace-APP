@@ -18,7 +18,7 @@ function [] = plot_csi_trace_periodicity(file_path)
     xlabel('packet number');
     ylabel('t(us)');
     title('Packet interval');
-    xlim([0 10000]);
-    ylim([0 10000]);
+    xlim([0 1000]);
+    ylim([0 100000]);
 end
 

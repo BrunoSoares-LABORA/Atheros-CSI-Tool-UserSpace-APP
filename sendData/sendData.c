@@ -46,12 +46,12 @@
 int main(int argc, char *argv[])
 {
 	int     sockfd;
-    	int     i;
+    int     i;
 	struct  ifreq if_idx;
 	struct  ifreq if_mac;
-	int     tx_len = 0,Cnt;
+	int     tx_len = 0,Cnt,seconds;
 	char    sendbuf[BUF_SIZ];
-    	unsigned int DstAddr[6];
+    unsigned int DstAddr[6];
 	struct  ether_header *eh = (struct ether_header *) sendbuf;
 	struct  iphdr *iph = (struct iphdr *) (sendbuf + sizeof(struct ether_header));
 	struct  sockaddr_ll socket_address;
@@ -59,8 +59,8 @@ int main(int argc, char *argv[])
 	
     if (argc == 1)
     {
-        printf("Usage:   %s ifName DstMacAddr NumOfPacketToSend\n",argv[0]);
-        printf("Example: %s wlan0 00:7F:5D:3E:4A 100\n",argv[0]);
+        printf("Usage:   %s ifName DstMacAddr NumOfPacketToSend NumOfSeconds\n",argv[0]);
+        printf("Example: %s wlan0 00:7F:5D:3E:4A 100 10\n",argv[0]);
         exit(0);
     }
 
@@ -90,7 +90,11 @@ int main(int argc, char *argv[])
         Cnt = atoi(argv[3]);
     else
         Cnt = 1;
-	
+     
+    if(argc > 4)
+		seconds = atoi(argv[4]);
+	else
+		seconds = 1;
  
 	/* Open RAW socket to send on */
 	if ((sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) == -1) {
@@ -162,15 +166,16 @@ int main(int argc, char *argv[])
  
 	/* Send packet */
     int wait_time = 1000000/Cnt;
-    for(;Cnt>0;Cnt--)
-    {
-        if (usleep(wait_time) == -1){
-            printf("sleep failed\n");
-        }
-        if (sendto(sockfd, sendbuf, tx_len, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0){
-            printf("Send failed\n");
-        }
-    }
+    for(;seconds>0;seconds--) {
+		for(;Cnt>0;Cnt--) {
+			if (usleep(wait_time) == -1){
+				printf("sleep failed\n");
+			}
+			if (sendto(sockfd, sendbuf, tx_len, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0){
+				printf("Send failed\n");
+			}
+		}
+	}
 	
 	return 0;
 }

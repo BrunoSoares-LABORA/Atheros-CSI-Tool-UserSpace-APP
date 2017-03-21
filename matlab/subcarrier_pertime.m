@@ -7,7 +7,11 @@ function subcarriers = subcarrier_pertime(csi)
         % gets rx and tx subcarriers data
         [M, N, S] = size(csi_data);
         if S == num_tones && M == 3 && N == 3
-            subcarriers(:,:,:,index) = csi_data;
+            if exist('subcarriers', 'var')
+                subcarriers(:,:,:,end+1) = csi_data;
+            else
+                subcarriers(:,:,:,1) = csi_data;
+            end
         end
     end
 end
